@@ -1,2 +1,2 @@
-# TestXchange
- Sandbox for cryptocurrency exchanges
+# ts-playground
+ My TS playground
