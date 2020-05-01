@@ -27,12 +27,21 @@
   "lint-staged": {
     "*.{ts}": "eslint --fix"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/valamidev/sand-ex.git"
+  },
+  "keywords": [
+    "exchanges",
+    "binance",
+    "ccxt",
+    "backtest",
+    "sandbox",
+    "algotrading",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "dotenv": "^8.0.0"
-  },
   "devDependencies": {
     "@types/jest": "24.9.1",
     "@types/node": "12.12.29",
