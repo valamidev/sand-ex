@@ -20,8 +20,7 @@ describe('Exchange', () => {
     // Assert
     expect(testExchange.feeMaker).toBe(exchangeOptions.fee);
     expect(testExchange.feeTaker).toBe(exchangeOptions.fee);
-    expect(testExchange.balanceAsset).toBe(exchangeOptions.balanceAsset);
-    expect(testExchange.balanceQuote).toBe(exchangeOptions.balanceQuote);
+    expect(testExchange.getBalance()).toMatchObject({ balanceAsset: 1, balanceQuote: 20000 });
   });
 
   it('should tick over candles', () => {
@@ -43,6 +42,7 @@ describe('Exchange', () => {
     // Arrange
     const price = 8000;
     const quantity = 1.2;
+    const expectedQuoteBalance = exchangeOptions.balanceQuote - price * quantity;
 
     //Act
     testExchange.nextTick();
@@ -55,8 +55,8 @@ describe('Exchange', () => {
     testExchange.nextTick();
 
     //Assert
-    expect(testExchange.orders).toHaveLength(1);
-    expect(testExchange.orders[0]).toMatchObject({
+    expect(testExchange.getOrders()).toHaveLength(1);
+    expect(testExchange.getOrders()[0]).toMatchObject({
       orderId: 1,
       price: 8000,
       origQty: 1.2,
@@ -68,7 +68,7 @@ describe('Exchange', () => {
       time: 1569160500000,
       updateTime: 1569160800000,
     });
-    expect(testExchange.balanceQuote).toBe(exchangeOptions.balanceQuote - price * quantity);
+    expect(testExchange.getBalance()).toMatchObject({ balanceAsset: 1, balanceQuote: expectedQuoteBalance });
     expect((testExchange as any).orderId).toBe(2);
   });
 
@@ -76,6 +76,7 @@ describe('Exchange', () => {
     // Arrange
     const price = 15000;
     const quantity = 0.5;
+    const expectedBalanceAsset = exchangeOptions.balanceAsset - quantity;
 
     //Act
     testExchange.nextTick();
@@ -88,8 +89,8 @@ describe('Exchange', () => {
     testExchange.nextTick();
 
     //Assert
-    expect(testExchange.orders).toHaveLength(1);
-    expect(testExchange.orders[0]).toMatchObject({
+    expect(testExchange.getOrders()).toHaveLength(1);
+    expect(testExchange.getOrders()[0]).toMatchObject({
       orderId: 1,
       price: 15000,
       origQty: 0.5,
@@ -101,7 +102,11 @@ describe('Exchange', () => {
       time: 1569160500000,
       updateTime: 1569160800000,
     });
-    expect(testExchange.balanceAsset).toBe(exchangeOptions.balanceAsset - quantity);
+
+    expect(testExchange.getBalance()).toMatchObject({
+      balanceAsset: expectedBalanceAsset,
+      balanceQuote: 20000,
+    });
     expect((testExchange as any).orderId).toBe(2);
   });
 
@@ -134,16 +139,18 @@ describe('Exchange', () => {
     testExchange.cancelOrder(2);
 
     //Assert
-    expect(testExchange.orders).toHaveLength(2);
-    expect(testExchange.balanceAsset).toBe(exchangeOptions.balanceAsset);
-    expect(testExchange.balanceQuote).toBe(exchangeOptions.balanceQuote);
+    expect(testExchange.getOrders()).toHaveLength(2);
+    expect(testExchange.getBalance()).toMatchObject({
+      balanceAsset: exchangeOptions.balanceAsset,
+      balanceQuote: exchangeOptions.balanceQuote,
+    });
 
-    expect(testExchange.orders[0]).toMatchObject({
+    expect(testExchange.getOrders()[0]).toMatchObject({
       orderId: 1,
       status: OrderStatus.CANCELED,
       updateTime: 1569160800000,
     });
-    expect(testExchange.orders[1]).toMatchObject({
+    expect(testExchange.getOrders()[1]).toMatchObject({
       orderId: 2,
       status: OrderStatus.CANCELED,
       updateTime: 1569160800000,
@@ -180,11 +187,13 @@ describe('Exchange', () => {
     }
 
     //Assert
-    expect(testExchange.orders).toHaveLength(2);
-    expect(testExchange.balanceAsset).toBe(1.49925);
-    expect(testExchange.balanceQuote).toBe(15026.25);
+    expect(testExchange.getOrders()).toHaveLength(2);
+    expect(testExchange.getBalance()).toMatchObject({
+      balanceAsset: 1.49925,
+      balanceQuote: 15026.25,
+    });
 
-    expect(testExchange.orders[0]).toMatchObject({
+    expect(testExchange.getOrders()[0]).toMatchObject({
       orderId: 1,
       price: priceSell,
       origQty: quantitySell,
@@ -196,7 +205,7 @@ describe('Exchange', () => {
       time: 1569160500000,
       updateTime: 1569168000000,
     });
-    expect(testExchange.orders[1]).toMatchObject({
+    expect(testExchange.getOrders()[1]).toMatchObject({
       orderId: 2,
       price: 9970,
       origQty: quantityBuy,
@@ -226,7 +235,7 @@ describe('Exchange', () => {
         quantity: quantitySell,
       });
     }).toThrow('Error: Insufficient balance, missing: Asset');
-    expect(testExchange.orders).toHaveLength(0);
+    expect(testExchange.getOrders()).toHaveLength(0);
   });
 
   it('should Buy Order throw balance Errors', () => {
@@ -245,6 +254,6 @@ describe('Exchange', () => {
         quantity: quantityBuy,
       });
     }).toThrow('Error: Insufficient balance, missing: Quote');
-    expect(testExchange.orders).toHaveLength(0);
+    expect(testExchange.getOrders()).toHaveLength(0);
   });
 });
