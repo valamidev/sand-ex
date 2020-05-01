@@ -1,6 +1,6 @@
 {
   "name": "sand-ex",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cryptocurrency Exchange sandbox for backtesting",
   "private": false,
   "main": "build/index.js",
