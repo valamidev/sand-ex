@@ -1,18 +1,18 @@
-import { ExchangeOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
+import { SandExOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
 
-export class Exchange {
-  private readonly candleData: OHLCV[];
-  protected balanceAsset: number;
-  protected balanceQuote: number;
+export default class SandEx {
+  private readonly candleData: OHLCV[] | undefined;
+  balanceAsset: number;
+  balanceQuote: number;
   readonly feeMaker: number;
   readonly feeTaker: number;
   readonly candlePrice: CandlePrice;
-  protected orders: Order[];
-  protected tick: number;
-  protected orderId: number;
-  protected time: number;
+  orders: Order[];
+  private tick: number;
+  private orderId: number;
+  time: number;
 
-  constructor(options: ExchangeOptions) {
+  constructor(options: SandExOptions) {
     this.balanceAsset = options.balanceAsset;
     this.balanceQuote = options.balanceQuote;
 
@@ -26,7 +26,9 @@ export class Exchange {
       this.feeTaker = options.feeTaker;
     }
 
-    this.candleData = options.candleData;
+    if (options.candleData) {
+      this.candleData = options.candleData;
+    }
 
     this.candlePrice = CandlePrice.CLOSE;
 
@@ -40,28 +42,45 @@ export class Exchange {
     this.orderId = 1;
   }
 
+  update(candelData: OHLCV): void {
+    const candelPrice = candelData[this.candlePrice];
+    const candelTime = candelData[0];
+
+    if (this.time >= candelTime) {
+      return;
+    }
+
+    this.time = candelTime;
+    this._updateOrders(candelPrice);
+  }
+
   nextTick(): OHLCV | boolean {
-    if (!this.candleData[this.tick]) {
+    if (!this.candleData) {
+      throw new Error('CandleData[] not exist');
+    }
+
+    const currentTick = this.tick;
+    this.tick += 1;
+
+    if (!this.candleData[currentTick]) {
       return false;
     }
 
-    const currentCandleStick = this.candleData[this.tick];
-    this.time = this.candleData[this.tick][0];
-    const currentPrice = this.candleData[this.tick][this.candlePrice];
+    const currentCandle = this.candleData[currentTick];
 
-    this._updateOrders(currentPrice);
+    this.update(currentCandle);
 
-    return currentCandleStick;
+    return currentCandle;
   }
 
   private _updateOrders(currentPrice: number): void {
     this.orders = this.orders.map((order) => {
       // Skip finished orders
-      if (order.status !== OrderStatus.NEW) {
+      if (order.status !== OrderStatus.NEW || order.time === this.time) {
         return order;
       }
 
-      if (order.side === OrderSide.BUY || currentPrice <= order.price) {
+      if (order.side === OrderSide.BUY && currentPrice <= order.price) {
         this.balanceAsset += order.origQty - order.origQty * this.feeTaker;
 
         return {
@@ -75,8 +94,7 @@ export class Exchange {
         };
       }
 
-      // Sell
-      if (order.side === OrderSide.SELL || currentPrice >= order.price) {
+      if (order.side === OrderSide.SELL && currentPrice >= order.price) {
         const amountOfQuote = order.origQty * order.price;
         this.balanceQuote += amountOfQuote - amountOfQuote * this.feeTaker;
 
@@ -104,41 +122,88 @@ export class Exchange {
 
     const { side, price, quantity, type } = options;
 
-    if (side === OrderSide.BUY) {
-      const totalQuotePrice = price * quantity;
-      this.balanceQuote -= totalQuotePrice;
+    try {
+      if (side === OrderSide.BUY) {
+        const totalQuotePrice = price * quantity;
+        this._checkAvailableQuoteBalance(totalQuotePrice);
+        this.balanceQuote -= totalQuotePrice;
 
-      this.orders.push({
-        orderId,
-        price,
-        origQty: quantity,
-        executedQty: 0,
-        cummulativeQuoteQty: 0,
-        status: OrderStatus.NEW,
-        type,
-        side,
-        time,
-        updateTime: time,
-      });
+        this.orders.push({
+          orderId,
+          price,
+          origQty: quantity,
+          executedQty: 0,
+          cummulativeQuoteQty: 0,
+          status: OrderStatus.NEW,
+          type,
+          side,
+          time,
+          updateTime: time,
+        });
+      }
+
+      if (side === OrderSide.SELL) {
+        this._checkAvailableAssetBalance(quantity);
+        this.balanceAsset -= quantity;
+
+        this.orders.push({
+          orderId,
+          price,
+          origQty: quantity,
+          executedQty: 0,
+          cummulativeQuoteQty: 0,
+          status: OrderStatus.NEW,
+          type,
+          side,
+          time,
+          updateTime: time,
+        });
+      }
+
+      return this.orders.find((order) => order.orderId === orderId) as Order;
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
+
+  cancelOrder(orderId: number): Error | boolean {
+    if (!this.orders.find((order) => order.orderId === orderId)) {
+      throw new Error(`Order is not exist, OrderId: ${orderId}`);
     }
 
-    if (side === OrderSide.SELL) {
-      this.balanceAsset -= quantity;
+    this.orders = this.orders.map((order) => {
+      if (order.orderId === orderId && order.side === OrderSide.SELL) {
+        this.balanceAsset += order.origQty - order.executedQty;
 
-      this.orders.push({
-        orderId,
-        price,
-        origQty: quantity,
-        executedQty: 0,
-        cummulativeQuoteQty: 0,
-        status: OrderStatus.NEW,
-        type,
-        side,
-        time,
-        updateTime: time,
-      });
+        return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };
+      }
+
+      if (order.orderId === orderId && order.side === OrderSide.BUY) {
+        const totalQuotePrice = order.price * (order.origQty - order.executedQty);
+        this.balanceQuote += totalQuotePrice;
+
+        return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };
+      }
+
+      return order;
+    });
+
+    return true;
+  }
+
+  private _checkAvailableAssetBalance(reqAsset: number): void | Error {
+    const check = this.balanceAsset - reqAsset;
+
+    if (check < 0) {
+      throw new Error(`Insufficient balance, missing: Asset , ${check}`);
     }
+  }
 
-    return this.orders.find((order) => order.orderId === orderId) as Order;
+  private _checkAvailableQuoteBalance(reqQuote: number): void | Error {
+    const check = this.balanceQuote - reqQuote;
+
+    if (check < 0) {
+      throw new Error(`Insufficient balance, missing: Quote , ${check}`);
+    }
   }
 }

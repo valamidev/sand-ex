@@ -1,10 +1,10 @@
-export interface ExchangeOptions {
+export interface SandExOptions {
   balanceAsset: number;
   balanceQuote: number;
   fee: number;
   feeMaker?: number;
   feeTaker?: number;
-  candleData: OHLCV[];
+  candleData?: OHLCV[];
   candlePrice?: CandlePrice;
 }
 

@@ -1,2 +1,3 @@
-# ts-playground
- My TS playground
+# SandEx
+
+Cryptocurrency Exchange for Backtesting

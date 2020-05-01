@@ -1,8 +1,8 @@
 {
-  "name": "test-exchange",
-  "version": "1.0.0",
-  "description": "Test crypto exchanges",
-  "private": true,
+  "name": "sand-ex",
+  "version": "0.1.0",
+  "description": "Cryptocurrency Exchange sandbox for backtesting",
+  "private": false,
   "main": "build/index.js",
   "scripts": {
     "start": "node  ./build/index.js",
