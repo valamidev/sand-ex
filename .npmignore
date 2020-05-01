@@ -1,0 +1,15 @@
+.babelrc
+.eslintignore
+.eslintrc.json
+.gitignore
+.lintstagedrc.json
+.nycrc
+.prettierrc
+.coveralls.yml
+
+tsconfig.json
+jest.config.js
+coverage
+src
+__tests__
+examples
