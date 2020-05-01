@@ -42,16 +42,16 @@ export default class SandEx {
     this.orderId = 1;
   }
 
-  update(candelData: OHLCV): void {
-    const candelPrice = candelData[this.candlePrice];
-    const candelTime = candelData[0];
+  update(candleData: OHLCV): void {
+    const candlePrice = candleData[this.candlePrice];
+    const candleTime = candleData[0];
 
-    if (this.time >= candelTime) {
+    if (this.time >= candleTime) {
       return;
     }
 
-    this.time = candelTime;
-    this._updateOrders(candelPrice);
+    this.time = candleTime;
+    this._updateOrders(candlePrice);
   }
 
   nextTick(): OHLCV | boolean {
