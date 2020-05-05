@@ -1,3 +1,4 @@
+import { floor } from 'lodash';
 import { SandExOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
 
 export default class SandEx {
@@ -11,6 +12,7 @@ export default class SandEx {
   private tick: number;
   private orderId: number;
   private time: number;
+  private readonly precision: number;
 
   constructor(options: SandExOptions) {
     this._balanceAsset = options.balanceAsset;
@@ -19,22 +21,17 @@ export default class SandEx {
     this.feeMaker = options.fee;
     this.feeTaker = options.fee;
 
-    if (options.feeMaker) {
-      this.feeMaker = options.feeMaker;
-    }
-    if (options.feeTaker) {
-      this.feeTaker = options.feeTaker;
-    }
+    this.feeMaker = options.feeMaker || options.fee;
+
+    this.feeTaker = options.feeTaker || options.fee;
 
     if (options.candleData) {
       this.candleData = options.candleData;
     }
 
-    this.candlePrice = CandlePrice.CLOSE;
+    this.candlePrice = options.candlePrice || CandlePrice.CLOSE;
 
-    if (options.candlePrice) {
-      this.candlePrice = options.candlePrice;
-    }
+    this.precision = options.precision || 10;
 
     this._orders = [];
     this.tick = 0;
@@ -92,7 +89,7 @@ export default class SandEx {
       }
 
       if (order.side === OrderSide.BUY && currentPrice <= order.price) {
-        this._balanceAsset += order.origQty - order.origQty * this.feeTaker;
+        this._balanceAsset += floor(order.origQty - order.origQty * this.feeTaker, this.precision);
 
         return {
           ...order,
@@ -107,7 +104,7 @@ export default class SandEx {
 
       if (order.side === OrderSide.SELL && currentPrice >= order.price) {
         const amountOfQuote = order.origQty * order.price;
-        this._balanceQuote += amountOfQuote - amountOfQuote * this.feeTaker;
+        this._balanceQuote += floor(amountOfQuote - amountOfQuote * this.feeTaker, this.precision);
 
         return {
           ...order,
@@ -137,7 +134,7 @@ export default class SandEx {
       if (side === OrderSide.BUY) {
         const totalQuotePrice = price * quantity;
         this._checkAvailableQuoteBalance(totalQuotePrice);
-        this._balanceQuote -= totalQuotePrice;
+        this._balanceQuote -= floor(totalQuotePrice, this.precision);
 
         this._orders.push({
           orderId,
@@ -155,7 +152,7 @@ export default class SandEx {
 
       if (side === OrderSide.SELL) {
         this._checkAvailableAssetBalance(quantity);
-        this._balanceAsset -= quantity;
+        this._balanceAsset -= floor(quantity, this.precision);
 
         this._orders.push({
           orderId,
@@ -203,7 +200,7 @@ export default class SandEx {
   }
 
   private _checkAvailableAssetBalance(reqAsset: number): void | Error {
-    const check = this._balanceAsset - reqAsset;
+    const check = floor(this._balanceAsset - reqAsset, this.precision);
 
     if (check < 0) {
       throw new Error(`Insufficient balance, missing: Asset , ${check}`);
@@ -211,7 +208,7 @@ export default class SandEx {
   }
 
   private _checkAvailableQuoteBalance(reqQuote: number): void | Error {
-    const check = this._balanceQuote - reqQuote;
+    const check = floor(this._balanceQuote - reqQuote, this.precision);
 
     if (check < 0) {
       throw new Error(`Insufficient balance, missing: Quote , ${check}`);

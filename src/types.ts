@@ -6,6 +6,7 @@ export interface SandExOptions {
   feeTaker?: number;
   candleData?: OHLCV[];
   candlePrice?: CandlePrice;
+  precision?: number;
 }
 
 // time, open, high, low, close, volume
