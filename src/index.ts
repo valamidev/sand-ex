@@ -1,6 +1,8 @@
 import { floor } from 'lodash';
 import { SandExOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
 
+const DEFAULT_PRECISION = 12;
+
 export default class SandEx {
   private readonly candleData: OHLCV[] | undefined;
   private _balanceAsset: number;
@@ -15,28 +17,20 @@ export default class SandEx {
   private readonly precision: number;
 
   constructor(options: SandExOptions) {
-    this._balanceAsset = options.balanceAsset;
-    this._balanceQuote = options.balanceQuote;
-
-    this.feeMaker = options.fee;
-    this.feeTaker = options.fee;
-
-    this.feeMaker = options.feeMaker || options.fee;
-
-    this.feeTaker = options.feeTaker || options.fee;
-
-    if (options.candleData) {
-      this.candleData = options.candleData;
-    }
-
-    this.candlePrice = options.candlePrice || CandlePrice.CLOSE;
-
-    this.precision = options.precision || 10;
-
     this._orders = [];
     this.tick = 0;
     this.time = 0;
     this.orderId = 1;
+    this._balanceAsset = options.balanceAsset;
+    this._balanceQuote = options.balanceQuote;
+    this.feeMaker = options.feeMaker || options.fee;
+    this.feeTaker = options.feeTaker || options.fee;
+    this.candlePrice = options.candlePrice || CandlePrice.CLOSE;
+    this.precision = options.precision || DEFAULT_PRECISION;
+
+    if (options.candleData) {
+      this.candleData = options.candleData;
+    }
   }
 
   getBalance(): Record<string, number> {
