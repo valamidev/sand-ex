@@ -18,12 +18,20 @@ export const mulWithPrecision = (number1: number, number2: number, precision: nu
     .split('.');
 
   if (resultString[1]) {
-    resultString[1] = resultString[1].slice(0, -1);
+    if (resultString[1].indexOf('e') === -1) {
+      resultString[1] = resultString[1].slice(0, -1);
+    } else {
+      const resultStringScience = resultString[1].split('e');
+
+      if (resultStringScience[0].length > 2) {
+        resultStringScience[0] = resultStringScience[0].slice(0, -1);
+      }
+
+      resultString[1] = resultStringScience.join('e');
+    }
   }
 
-  const result = Number(resultString.join('.'));
-
-  return Number(result);
+  return Number(resultString.join('.'));
 };
 
 export const divWithPrecision = (number1: number, number2: number, precision: number): number => {
@@ -32,10 +40,18 @@ export const divWithPrecision = (number1: number, number2: number, precision: nu
     .split('.');
 
   if (resultString[1]) {
-    resultString[1] = resultString[1].slice(0, -1);
+    if (resultString[1].indexOf('e') === -1) {
+      resultString[1] = resultString[1].slice(0, -1);
+    } else {
+      const resultStringScience = resultString[1].split('e');
+
+      if (resultStringScience[0].length > 2) {
+        resultStringScience[0] = resultStringScience[0].slice(0, -1);
+      }
+
+      resultString[1] = resultStringScience.join('e');
+    }
   }
 
-  const result = Number(resultString.join('.'));
-
-  return Number(result);
+  return Number(resultString.join('.'));
 };

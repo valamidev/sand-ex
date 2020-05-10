@@ -23,15 +23,32 @@ describe('BigInt', () => {
        expect(numberFloat).toBe(4324.324231412341);
      });
 
+     it('should not get NaN', () => {
+
+      // Act
+        const num1 = 0.09208126315006449;
+        const num2 = 0.000010223056155833632;
+
+        const safeDiv = divWithPrecision(num1,num2, precision);
+        const safeMull =  mulWithPrecision(num1,num2,precision);
+
+        const floatDiv = num1 / num2 ;
+        const floatMull =  num1 * num2;
+
+    
+        // Assert
+        expect(safeDiv).toBeLessThanOrEqual(floatDiv);
+        expect(safeMull).toBeLessThanOrEqual(floatMull);
+      
+    });
+
 
      it('should keep safe rounding', () => {
-
-
         // Act
         for (let i = 0; i < 1000; i++) {
           
-          const num1 = 1 * Math.random();
-          const num2 = 1 * Math.random();
+          const num1 = 0.0001 * Math.random();
+          const num2 = 0.0001 * Math.random();
 
           const safeDiv = divWithPrecision(num1,num2, precision);
           const safeMull =  mulWithPrecision(num1,num2,precision);
@@ -39,7 +56,7 @@ describe('BigInt', () => {
           const floatDiv = num1 / num2 ;
           const floatMull =  num1 * num2;
 
-
+      
           // Assert
           expect(safeDiv).toBeLessThanOrEqual(floatDiv);
           expect(safeMull).toBeLessThanOrEqual(floatMull);
