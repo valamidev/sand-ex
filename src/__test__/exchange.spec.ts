@@ -175,11 +175,21 @@ describe('Exchange', () => {
       quantity: quantitySell,
     });
 
+    expect(testExchange.getBalance()).toMatchObject({
+      balanceAsset: 0.5,
+      balanceQuote:20000,
+    });
+
     testExchange.createNewOrder({
       side: OrderSide.BUY,
       type: OrderType.LIMIT,
       price: priceBuy,
       quantity: quantityBuy,
+    });
+
+    expect(testExchange.getBalance()).toMatchObject({
+      balanceAsset:  0.5,
+      balanceQuote: 10030,
     });
 
     for (let i = 0; i < historyLength; i++) {
@@ -189,8 +199,8 @@ describe('Exchange', () => {
     //Assert
     expect(testExchange.getOrders()).toHaveLength(2);
     expect(testExchange.getBalance()).toMatchObject({
-      balanceAsset: 1.49925,
-      balanceQuote: 15026.25,
+      balanceAsset: 1.4993,
+      balanceQuote: 15026.3,
     });
 
     expect(testExchange.getOrders()[0]).toMatchObject({

@@ -8,6 +8,10 @@ export const removePrecision = (bigInt: bigint, precision: number): number => {
   return Number(bigInt.toString()) / DEFAULT_RADIX ** precision;
 };
 
+export const toPrecision = (number: number, precision: number): number => {
+  return removePrecision(addPrecision(number, precision), precision);
+};
+
 export const mulWithPrecision = (number1: number, number2: number, precision: number): number => {
   const resultString = removePrecision(addPrecision(number1 * number2, precision), 12)
     .toString()

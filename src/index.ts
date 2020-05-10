@@ -1,5 +1,5 @@
-import { floor } from 'lodash';
 import { SandExOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
+import { toPrecision, mulWithPrecision } from './utils';
 
 const DEFAULT_PRECISION = 12;
 
@@ -83,7 +83,11 @@ export default class SandEx {
       }
 
       if (order.side === OrderSide.BUY && currentPrice <= order.price) {
-        this._balanceAsset += floor(order.origQty - order.origQty * this.feeTaker, this.precision);
+        const { origQty } = order;
+        const fixedOrigQty = toPrecision(origQty, this.precision);
+
+        this._balanceAsset =
+          this._balanceAsset + fixedOrigQty - mulWithPrecision(fixedOrigQty, this.feeTaker, this.precision);
 
         return {
           ...order,
@@ -97,8 +101,11 @@ export default class SandEx {
       }
 
       if (order.side === OrderSide.SELL && currentPrice >= order.price) {
-        const amountOfQuote = order.origQty * order.price;
-        this._balanceQuote += floor(amountOfQuote - amountOfQuote * this.feeTaker, this.precision);
+        const { origQty, price } = order;
+        const amountOfQuote = mulWithPrecision(origQty, price, this.precision);
+
+        this._balanceQuote =
+          this._balanceQuote + amountOfQuote - mulWithPrecision(amountOfQuote, this.feeTaker, this.precision);
 
         return {
           ...order,
@@ -126,9 +133,10 @@ export default class SandEx {
 
     try {
       if (side === OrderSide.BUY) {
-        const totalQuotePrice = price * quantity;
+        const totalQuotePrice = mulWithPrecision(price, quantity, this.precision);
         this._checkAvailableQuoteBalance(totalQuotePrice);
-        this._balanceQuote -= floor(totalQuotePrice, this.precision);
+
+        this._balanceQuote -= totalQuotePrice;
 
         this._orders.push({
           orderId,
@@ -146,7 +154,7 @@ export default class SandEx {
 
       if (side === OrderSide.SELL) {
         this._checkAvailableAssetBalance(quantity);
-        this._balanceAsset -= floor(quantity, this.precision);
+        this._balanceAsset -= quantity;
 
         this._orders.push({
           orderId,
@@ -175,13 +183,15 @@ export default class SandEx {
 
     this._orders = this._orders.map((order) => {
       if (order.orderId === orderId && order.side === OrderSide.SELL) {
-        this._balanceAsset += order.origQty - order.executedQty;
+        const { origQty, executedQty } = order;
+        this._balanceAsset += origQty - executedQty;
 
         return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };
       }
 
       if (order.orderId === orderId && order.side === OrderSide.BUY) {
-        const totalQuotePrice = order.price * (order.origQty - order.executedQty);
+        const { origQty, executedQty, price } = order;
+        const totalQuotePrice = mulWithPrecision(price, origQty - executedQty, this.precision);
         this._balanceQuote += totalQuotePrice;
 
         return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };
@@ -194,7 +204,7 @@ export default class SandEx {
   }
 
   private _checkAvailableAssetBalance(reqAsset: number): void | Error {
-    const check = floor(this._balanceAsset - reqAsset, this.precision);
+    const check = this._balanceAsset - reqAsset;
 
     if (check < 0) {
       throw new Error(`Insufficient balance, missing: Asset , ${check}`);
@@ -202,7 +212,7 @@ export default class SandEx {
   }
 
   private _checkAvailableQuoteBalance(reqQuote: number): void | Error {
-    const check = floor(this._balanceQuote - reqQuote, this.precision);
+    const check = this._balanceQuote - reqQuote;
 
     if (check < 0) {
       throw new Error(`Insufficient balance, missing: Quote , ${check}`);

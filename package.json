@@ -1,6 +1,6 @@
 {
   "name": "sand-ex",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Cryptocurrency Exchange sandbox for backtesting",
   "private": false,
   "main": "build/index.js",
@@ -44,7 +44,6 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jest": "24.9.1",
-    "@types/lodash": "^4.14.150",
     "@types/node": "12.12.29",
     "@typescript-eslint/eslint-plugin": "2.27.0",
     "@typescript-eslint/parser": "2.27.0",
@@ -68,8 +67,5 @@
   },
   "files": [
     "build/**/*"
-  ],
-  "dependencies": {
-    "lodash": "^4.17.15"
-  }
+  ]
 }
