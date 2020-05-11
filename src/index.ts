@@ -182,14 +182,14 @@ export default class SandEx {
     }
 
     this._orders = this._orders.map((order) => {
-      if (order.orderId === orderId && order.side === OrderSide.SELL) {
+      if (order.orderId === orderId && order.status === OrderStatus.NEW && order.side === OrderSide.SELL) {
         const { origQty, executedQty } = order;
         this._balanceAsset += origQty - executedQty;
 
         return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };
       }
 
-      if (order.orderId === orderId && order.side === OrderSide.BUY) {
+      if (order.orderId === orderId && order.status === OrderStatus.NEW && order.side === OrderSide.BUY) {
         const { origQty, executedQty, price } = order;
         const totalQuotePrice = mulWithPrecision(price, origQty - executedQty, this.precision);
         this._balanceQuote += totalQuotePrice;
