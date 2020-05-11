@@ -13,7 +13,7 @@ export const toPrecision = (number: number, precision: number): number => {
 };
 
 export const mulWithPrecision = (number1: number, number2: number, precision: number): number => {
-  const resultString = removePrecision(addPrecision(number1 * number2, precision), 12)
+  const resultString = toPrecision(number1 * number2, precision)
     .toString()
     .split('.');
 
@@ -35,7 +35,7 @@ export const mulWithPrecision = (number1: number, number2: number, precision: nu
 };
 
 export const divWithPrecision = (number1: number, number2: number, precision: number): number => {
-  const resultString = removePrecision(addPrecision(number1 / number2, precision), 12)
+  const resultString = toPrecision(number1 / number2, precision)
     .toString()
     .split('.');
 
