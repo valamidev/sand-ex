@@ -1,7 +1,4 @@
 import { SandExOptions, OHLCV, CandlePrice, Order, OrderStatus, OrderSide, NewOrderOptions } from './types';
-import { toPrecision, mulWithPrecision } from './utils';
-
-const DEFAULT_PRECISION = 12;
 
 export default class SandEx {
   private readonly candleData: OHLCV[] | undefined;
@@ -14,7 +11,6 @@ export default class SandEx {
   private tick: number;
   private orderId: number;
   private time: number;
-  private readonly precision: number;
 
   constructor(options: SandExOptions) {
     this._orders = [];
@@ -26,7 +22,6 @@ export default class SandEx {
     this.feeMaker = options.feeMaker || options.fee;
     this.feeTaker = options.feeTaker || options.fee;
     this.candlePrice = options.candlePrice || CandlePrice.CLOSE;
-    this.precision = options.precision || DEFAULT_PRECISION;
 
     if (options.candleData) {
       this.candleData = options.candleData;
@@ -84,11 +79,8 @@ export default class SandEx {
 
       if (order.side === OrderSide.BUY && currentPrice <= order.price) {
         const { origQty } = order;
-        const fixedOrigQty = toPrecision(origQty, this.precision);
 
-        this._balanceAsset =
-          this._balanceAsset + fixedOrigQty - mulWithPrecision(fixedOrigQty, this.feeTaker, this.precision);
-
+        this._balanceAsset += origQty * (1 - this.feeTaker);
         return {
           ...order,
           ...{
@@ -102,10 +94,9 @@ export default class SandEx {
 
       if (order.side === OrderSide.SELL && currentPrice >= order.price) {
         const { origQty, price } = order;
-        const amountOfQuote = mulWithPrecision(origQty, price, this.precision);
+        const amountOfQuote = origQty * price;
 
-        this._balanceQuote =
-          this._balanceQuote + amountOfQuote - mulWithPrecision(amountOfQuote, this.feeTaker, this.precision);
+        this._balanceQuote += amountOfQuote * (1 - this.feeTaker);
 
         return {
           ...order,
@@ -133,7 +124,7 @@ export default class SandEx {
 
     try {
       if (side === OrderSide.BUY) {
-        const totalQuotePrice = mulWithPrecision(price, quantity, this.precision);
+        const totalQuotePrice = price * quantity;
         this._checkAvailableQuoteBalance(totalQuotePrice);
 
         this._balanceQuote -= totalQuotePrice;
@@ -191,7 +182,7 @@ export default class SandEx {
 
       if (order.orderId === orderId && order.status === OrderStatus.NEW && order.side === OrderSide.BUY) {
         const { origQty, executedQty, price } = order;
-        const totalQuotePrice = mulWithPrecision(price, origQty - executedQty, this.precision);
+        const totalQuotePrice = price * (origQty - executedQty);
         this._balanceQuote += totalQuotePrice;
 
         return { ...order, ...{ status: OrderStatus.CANCELED, updateTime: this.time } };

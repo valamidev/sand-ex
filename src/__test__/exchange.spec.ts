@@ -199,8 +199,8 @@ describe('Exchange', () => {
     //Assert
     expect(testExchange.getOrders()).toHaveLength(2);
     expect(testExchange.getBalance()).toMatchObject({
-      balanceAsset: 1.4993,
-      balanceQuote: 15026.3,
+      balanceAsset: 1.49925,
+      balanceQuote: 15026.25,
     });
 
     expect(testExchange.getOrders()[0]).toMatchObject({
