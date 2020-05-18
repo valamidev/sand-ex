@@ -8,7 +8,7 @@ SandEx allow you to backtest your trading strategies and order execution in a si
 
 #### Basic Usage:
 
-```
+```javascript
 import SandExchange from 'sand-ex';
 
 const exchangeOptions = {
@@ -28,7 +28,7 @@ const Exchange = new SandExchange(exchangeOptions);
 
 Update Exchange with OHLCV candleStick
 
-```
+```javascript
 Exchange.update([1569160500000, 9977.09, 9992.3, 9972.63, 9986.24, 56.127912]);
 ```
 
@@ -36,19 +36,19 @@ Exchange.update([1569160500000, 9977.09, 9992.3, 9972.63, 9986.24, 56.127912]);
 
 If you have CandleData[] as input you can replay tick to tick
 
-```
+```javascript
 Exchange.nextTick();
 ```
 
 #### getBalance():
 
-```
+```javascript
 Exchange.getBalance();
 ```
 
 #### createNewOrder({orderDetails}):
 
-```
+```javascript
 Exchange.createNewOrder({
 side: 'BUY',
 type: 'LIMIT,
@@ -59,7 +59,7 @@ quantity: 0.8,
 
 #### cancelOrder(orderId):
 
-```
+```javascript
 Exchange.cancelOrder(1);
 ```
 
@@ -67,7 +67,7 @@ Exchange.cancelOrder(1);
 
 Get All Orders (New,Filled,Canceled)
 
-```
+```javascript
 Exchange.getOrders();
 
 ```
